@@ -158,7 +158,7 @@
         let isRecording = false;
 
         // 👇👇👇 COLE SUA CHAVE DA API ENTRE AS ASPAS ABAIXO 👇👇👇
-        const GEMINI_API_KEY = 'AQ.Ab8RN6L1NDD7ovYwrHEo0wUH7h87EPd-lm5yEnGnHdwzlkFsDQ'; 
+        const GEMINI_API_KEY = 'AQ.Ab8RN6L1NDD7ovYwrHEo0wUH7h87EPd-lm5yEnGnHdwzlkFsDQ; 
         // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
         function handleFileSelect(e) {
@@ -208,14 +208,14 @@
             document.getElementById(`tab-${t}`).classList.add('active');
         }
 
-        // --- INTEGRAÇÃO COM A IA DO GOOGLE GEMINI ---
+        // --- INTEGRAÇÃO COM A IA DO GOOGLE GEMINI (CORRIGIDA) ---
         async function processMeeting() {
             if (!selectedFile) {
-                alert("Por favor, faça o upload de um arquivo de áudio ou grave a reunião primeiro.");
+                alert("Por favor, faça o upload de um ficheiro de áudio ou grave a reunião primeiro.");
                 return;
             }
             if (GEMINI_API_KEY === 'COLE_SUA_CHAVE_AQUI' || GEMINI_API_KEY === '') {
-                alert("ATENÇÃO: Você precisa colocar a sua chave da API do Gemini no código para a inteligência artificial funcionar!");
+                alert("ATENÇÃO: Você precisa colocar a sua chave da API do Gemini no código!");
                 return;
             }
 
@@ -223,57 +223,63 @@
             document.getElementById('results-panel').classList.add('d-none');
 
             try {
-                const reader = new FileReader();
-                reader.readAsDataURL(selectedFile);
-                reader.onload = async function () {
-                    const base64Data = reader.result.split(',')[1];
+                // Nova forma mais segura de ler o ficheiro no browser
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(selectedFile);
+                });
 
-                    const prompt = `Ouça este áudio de reunião. Retorne estritamente um arquivo JSON com 3 chaves:
-                    "resumo": "Um resumo executivo claro e detalhado em texto.",
-                    "plano": "Uma lista de tarefas e planos de ação formatados com tags HTML <ul><li>...</li></ul>.",
-                    "transcricao": "A transcrição completa e limpa do que foi dito."`;
+                const prompt = `Ouça este áudio de reunião. Retorne estritamente um arquivo JSON com 3 chaves:
+                "resumo": "Um resumo executivo claro e detalhado em texto.",
+                "plano": "Uma lista de tarefas e planos de ação formatados com tags HTML <ul><li>...</li></ul>.",
+                "transcricao": "A transcrição completa e limpa do que foi dito."`;
 
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: prompt },
-                                    { inlineData: { mimeType: selectedFile.type || "audio/mp3", data: base64Data } }
-                                ]
-                            }],
-                            generationConfig: { responseMimeType: "application/json" }
-                        })
-                    });
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                { inlineData: { mimeType: selectedFile.type || "audio/mp3", data: base64Data } }
+                            ]
+                        }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
 
-                    const result = await response.json();
-                    
-                    if(result.error) {
-                        throw new Error(result.error.message);
-                    }
+                const result = await response.json();
+                
+                if(result.error) {
+                    throw new Error(result.error.message);
+                }
 
-                    const iaResponse = JSON.parse(result.candidates[0].content.parts[0].text);
+                // Proteção contra a IA devolver texto extra (Markdown)
+                let rawText = result.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-                    document.getElementById('content-resumo').innerHTML = `<h5>Resumo Executivo</h5><p>${iaResponse.resumo}</p>`;
-                    document.getElementById('content-plano').innerHTML = `<h5>Plano de Ação</h5>${iaResponse.plano}`;
-                    document.getElementById('content-transcricao').innerHTML = `<h5>Transcrição Completa</h5><p>${iaResponse.transcricao}</p>`;
+                const iaResponse = JSON.parse(rawText);
 
-                    document.getElementById('loading-state').classList.add('d-none');
-                    document.getElementById('results-panel').classList.remove('d-none');
-                    switchTab('resumo');
-                };
-                reader.onerror = error => { throw error; };
+                document.getElementById('content-resumo').innerHTML = `<h5>Resumo Executivo</h5><p>${iaResponse.resumo}</p>`;
+                document.getElementById('content-plano').innerHTML = `<h5>Plano de Ação</h5>${iaResponse.plano}`;
+                document.getElementById('content-transcricao').innerHTML = `<h5>Transcrição Completa</h5><p>${iaResponse.transcricao}</p>`;
+
+                document.getElementById('loading-state').classList.add('d-none');
+                document.getElementById('results-panel').classList.remove('d-none');
+                switchTab('resumo');
 
             } catch (error) {
-                alert("Houve um erro ao processar o áudio com a IA. Detalhes: " + error.message);
+                // Agora os erros irão sempre aparecer e a roda azul irá desaparecer!
+                console.error(error);
+                alert("Falha ao processar com a IA. O ficheiro pode ser demasiado pesado ou ocorreu um erro de conexão. Detalhes: " + error.message);
                 document.getElementById('loading-state').classList.add('d-none');
             }
         }
 
         // --- FUNCIONALIDADE DE EXPORTAR PDF ---
         function exportPDF() {
-            // Mostra todas as abas temporariamente para o PDF capturar tudo
             const todasAbas = document.querySelectorAll('.tab-content');
             todasAbas.forEach(aba => aba.classList.remove('d-none'));
 
@@ -287,29 +293,21 @@
             };
             
             html2pdf().set(opt).from(element).save().then(() => {
-                // Restaura a visualização apenas da aba "Resumo" após salvar
                 switchTab('resumo');
             });
         }
 
         // --- FUNCIONALIDADE DE COMPARTILHAMENTO ---
         function copyToWhatsApp() {
-            // Pega os textos gerados pela IA
             const resumoText = document.getElementById('content-resumo').innerText;
             const planoText = document.getElementById('content-plano').innerText;
-            
             const textoParaEnviar = `*Ata da Reunião - AtaFlow*\n\n${resumoText}\n\n${planoText}`;
 
             if (navigator.share) {
-                navigator.share({
-                    title: 'Ata da Reunião',
-                    text: textoParaEnviar
-                }).catch(console.error);
+                navigator.share({ title: 'Ata da Reunião', text: textoParaEnviar }).catch(console.error);
             } else {
                 const url = `https://wa.me/?text=${encodeURIComponent(textoParaEnviar)}`;
                 window.open(url, '_blank');
             }
         }
     </script>
-</body>
-</html>
