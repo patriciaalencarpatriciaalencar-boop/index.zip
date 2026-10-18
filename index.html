@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AtaFlow - Inteligência em Reuniões</title>
     <style>
-        /* DESIGN PREMIUM EMBUTIDO - PROTEGIDO CONTRA ERROS DE LINK */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: system-ui, -apple-system, sans-serif !important;
@@ -119,13 +118,17 @@
         </div>
     </div>
 
-    <!-- Script de Funcionamento Inteligente -->
+    <!-- Script Corrigido e Descongelado -->
     <script>
         let selectedFile = null; let mediaRecorder = null; let audioChunks = []; let isRecording = false;
 
         function handleFileSelect(e) {
             const f = e.target.files;
-            if (f) { selectedFile = f; document.getElementById('upload-label').innerText = `Selecionado: ${f.name}`; document.getElementById('upload-label').style.color = "#3b82f6"; }
+            if (f && f.length > 0) { 
+                selectedFile = f[0]; 
+                document.getElementById('upload-label').innerText = `Selecionado: ${selectedFile.name}`; 
+                document.getElementById('upload-label').style.color = "#3b82f6"; 
+            }
         }
 
         async function toggleRecording() {
@@ -143,7 +146,7 @@
                     mediaRecorder.start(); isRecording = true;
                     btn.style.backgroundColor = "#ef4444"; btn.style.color = "#ffffff";
                     status.innerText = "Gravando reunião..."; status.style.color = "#ef4444";
-                } catch (err) { alert("Erro no microfone: " + err.message); }
+                } catch (err) { alert("Por favor, permita o acesso ao microfone nas configurações do seu navegador."); }
             } else {
                 mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); isRecording = false;
                 btn.style.backgroundColor = "#334155"; btn.style.color = "#94a3b8";
@@ -155,4 +158,3 @@
             document.getElementById('content-resumo').classList.add('hidden-panel');
             document.getElementById('content-plano').classList.add('hidden-panel');
             document.getElementById('content-transcricao').classList.add('hidden-panel');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
