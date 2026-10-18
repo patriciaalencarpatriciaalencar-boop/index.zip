@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AtaFlow - Inteligência em Reuniões</title>
+    <!-- Links Globais de Design Completos -->
+    <link rel="stylesheet" href="https://jsdelivr.net">
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <style>
+        @import url('https://googleapis.com');
+        
+        /* Estilos Premium Fixos - Protegidos contra tradução */
+        body { 
+            font-family: 'Inter', sans-serif !important; 
+            background-color: #0f172a !important; 
+            color: #f8fafc !important; 
+            min-height: 100vh; 
+        }
+        .card-premium { 
+            background: rgba(30, 41, 59, 0.7) !important; 
+            border: 1px solid rgba(71, 85, 105, 0.5) !important; 
+            border-radius: 16px !important; 
+            backdrop-filter: blur(12px); 
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .btn-premium { 
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important; 
+            border: none !important; 
+            color: white !important; 
+            font-weight: 600 !important; 
+            border-radius: 12px !important; 
+            padding: 14px 30px !important; 
+            transition: all 0.3s; 
+            width: 100%;
+        }
+        .btn-premium:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4); 
+        }
+        .nav-link { 
+            color: #94a3b8 !important; 
+            border: none !important; 
+            font-weight: 500;
+        }
+        .nav-link.active { 
+            color: #38bdf8 !important; 
+            border-bottom: 2px solid #38bdf8 !important; 
+            font-weight: 600 !important; 
+            background: transparent !important; 
+        }
+        .container-workspace {
+            max-w: 960px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Topbar Executiva -->
+    <nav class="navbar border-bottom border-secondary bg-dark bg-opacity-50 py-3">
+        <div class="container" style="max-width: 960px;">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary text-white p-2 rounded-3">
+                    <i class="fa-solid fa-microphone-lines fs-5"></i>
+                </div>
+                <div>
+                    <span class="fs-4 fw-bold text-white">Ata<span class="text-primary">Flow</span></span>
+                    <small class="d-block text-info fw-semibold text-uppercase tracking-wider text-xs">Enterprise AI</small>
+                </div>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 text-xs">● Sistema Pronto</span>
+        </div>
+    </nav>
+
+    <!-- Painel de Trabalho -->
+    <div class="container container-workspace">
+        <div class="row g-4">
+            
+            <!-- Caixa de Upload -->
+            <div class="col-md-6">
+                <div class="card-premium h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="text-white mb-2"><i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload de Áudio</h5>
+                        <p class="text-muted small">Importe gravações prontas do seu computador ou celular.</p>
+                    </div>
+                    <label class="border border-secondary border-dashed rounded-3 p-4 text-center cursor-pointer bg-black bg-opacity-20 d-flex flex-column align-items-center justify-content-center my-3" style="min-height: 120px;">
+                        <input type="file" id="audio-file" accept=".mp3,.m4a,.wav" class="d-none" onchange="handleFileSelect(event)">
+                        <i class="fa-solid fa-file-audio text-secondary fs-1 mb-2"></i>
+                        <div id="upload-label" class="text-muted small">Clique para selecionar (.mp3, .m4a, .wav)</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Caixa do Gravador -->
+            <div class="col-md-6">
+                <div class="card-premium h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="text-white mb-2"><i class="fa-solid fa-circle-dot text-danger me-2"></i> Gravador Digital</h5>
+                        <p class="text-muted small">Grave os detalhes da reunião ao vivo usando o microfone.</p>
+                    </div>
+                    <div class="bg-black bg-opacity-20 border border-secondary rounded-3 p-3 text-center my-3 d-flex flex-column align-items-center justify-content-center" style="min-height: 120px;">
+                        <button id="record-btn" onclick="toggleRecording()" class="btn btn-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                            <i class="fa-solid fa-microphone text-secondary fs-5" id="mic-icon"></i>
+                        </button>
+                        <small id="record-status" class="text-muted d-block mt-2 fw-semibold text-uppercase tracking-wider" style="font-size: 10px;">Microfone Inativo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ação Principal -->
+        <div class="text-center my-5">
+            <button id="process-btn" onclick="processMeeting()" class="btn-premium shadow">
+                <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Gerar Inteligência da Reunião
+            </button>
+        </div>
+
+        <!-- Tela de Carregamento -->
+        <div id="loading-state" class="card-premium p-5 text-center d-none my-4">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted m-0">Transcrevendo áudio com IA e estruturando os planos de ação...</p>
+        </div>
+
+        <!-- Painel de Resultados -->
+        <div id="results-panel" class="card-premium overflow-hidden d-none my-4 p-0">
+            <div class="bg-black bg-opacity-30 px-4 py-2 d-flex flex-wrap align-items-center justify-content-between gap-3 border-bottom border-secondary">
+                <ul class="nav nav-tabs border-0">
+                    <li class="nav-item"><button onclick="switchTab('resumo')" id="tab-resumo" class="nav-link active btn">Resumo Executivo</button></li>
+                    <li class="nav-item"><button onclick="switchTab('plano')" id="tab-plano" class="nav-link btn">Plano de Ação</button></li>
+                    <li class="nav-item"><button onclick="switchTab('transcricao')" id="tab-transcricao" class="nav-link btn">Transcrição Completa</button></li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <button onclick="exportPDF()" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-file-pdf text-danger me-1"></i> PDF</button>
+                    <button onclick="copyToWhatsApp()" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-share text-success me-1"></i> Compartilhar</button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div id="content-resumo" class="tab-content text-white"></div>
+                <div id="content-plano" class="tab-content d-none table-responsive"></div>
+                <div id="content-transcricao" class="tab-content d-none text-muted"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de Funcionamento Gratuito com Gemini via Vercel -->
+    <script>
+        let selectedFile = null; let mediaRecorder = null; let audioChunks = []; let isRecording = false;
+
+        function handleFileSelect(e) {
+            const f = e.target.files[0];
+            if (f) { selectedFile = f; document.getElementById('upload-label').innerText = `Selecionado: ${f.name}`; document.getElementById('upload-label').className = "text-info small fw-bold"; }
+        }
+
+        async function toggleRecording() {
+            const btn = document.getElementById('record-btn'); const status = document.getElementById('record-status');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream); audioChunks = [];
+                    mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        selectedFile = new File([blob], "gravacao.mp3", { type: 'audio/mp3' });
+                        status.innerText = "Áudio capturado!"; status.className = "text-success d-block mt-2 fw-semibold text-uppercase tracking-wider";
+                    };
+                    mediaRecorder.start(); isRecording = true;
+                    status.innerText = "Gravando reunião..."; status.className = "text-danger d-block mt-2 fw-semibold text-uppercase tracking-wider";
+                } catch (err) { alert("Erro no microfone: " + err.message); }
+            } else {
+                mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); isRecording = false;
+                btn.className = "btn btn-dark rounded-circle d-flex align-items-center justify-content-center";
+            }
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`content-${t}`).classList.remove('d-none');
