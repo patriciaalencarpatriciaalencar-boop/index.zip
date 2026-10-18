@@ -158,7 +158,7 @@
         let isRecording = false;
 
         // 👇👇👇 COLE SUA CHAVE DA API ENTRE AS ASPAS ABAIXO 👇👇👇
-        const GEMINI_API_KEY = 'AQ.Ab8RN6L1NDD7ovYwrHEo0wUH7h87EPd-lm5yEnGnHdwzlkFsDQ; 
+        const GEMINI_API_KEY = 'AQ.Ab8RN6L1NDD7ovYwrHEo0wUH7h87EPd-lm5yEnGnHdwzlkFsDQ'; 
         // 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
 
         function handleFileSelect(e) {
@@ -271,7 +271,6 @@
                 switchTab('resumo');
 
             } catch (error) {
-                // Agora os erros irão sempre aparecer e a roda azul irá desaparecer!
                 console.error(error);
                 alert("Falha ao processar com a IA. O ficheiro pode ser demasiado pesado ou ocorreu um erro de conexão. Detalhes: " + error.message);
                 document.getElementById('loading-state').classList.add('d-none');
@@ -311,3 +310,5 @@
             }
         }
     </script>
+</body>
+</html>
